@@ -1,0 +1,9 @@
+
+digraph{
+//Nodos
+node[shape=doublecircle] Node0 [label="0"];
+node[shape=circle] Node1 [label="1"];
+//MAL ESCRITO
+Node0->Node1 [etiqueta="a"];
+Node1->Node0 [etiqueta="a"];
+}

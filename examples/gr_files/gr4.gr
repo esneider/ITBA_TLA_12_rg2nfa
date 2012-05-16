@@ -1,0 +1,4 @@
+Gramatica4 = ({S, B, C}, {a,b,c}, S,
+	{S->B | a,
+	B->cS | \,
+	C->bC | \})

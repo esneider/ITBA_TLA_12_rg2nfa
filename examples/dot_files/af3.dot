@@ -1,0 +1,10 @@
+digraph{
+//Nodos
+node[shape=circle] Node0 [label="0"];
+node[shape=circle] Node1 [label="1"];
+//Transiciones
+Node0->Node1 [label="a"];
+Node1->Node0 [label="a"];
+Node0->Node0 [label="b"];
+Node1->Node1 [label="b"];
+}

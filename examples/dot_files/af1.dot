@@ -1,0 +1,12 @@
+digraph{
+rankdir = "LR";
+//Nodos
+node[shape=circle] Node0 [label="0"];
+node[shape=circle] Node1 [label="1"];
+node[shape=doublecircle] Node2 [label="2"];
+//Transiciones
+Node0->Node1 [label="a"];
+Node1->Node0 [label="a"];
+Node0->Node2 [label="c"];
+Node1->Node2 [label="b"];
+}

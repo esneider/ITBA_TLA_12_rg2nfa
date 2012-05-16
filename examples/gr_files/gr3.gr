@@ -1,0 +1,5 @@
+
+G3 = ({A,B,C,D},
+	{a, b, c},
+	A,
+	{A->Ba | c, B->Cb | \, C ->Db | \, D->Da | C})

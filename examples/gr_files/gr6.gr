@@ -1,0 +1,2 @@
+
+Grm*tica6 =({S,A,B}, {a,b,c}, S, {S->AB | aBbc, A -> bB | \, B->aAA}

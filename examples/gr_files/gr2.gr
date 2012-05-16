@@ -1,0 +1,6 @@
+G2 = (
+		{A, B, C, D},
+		{a, b, c},
+		A,
+		{A -> aB|c, B -> C|b, C->D | cD | b, D -> b}
+)
