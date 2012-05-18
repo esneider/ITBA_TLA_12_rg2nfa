@@ -1,5 +1,5 @@
 
 all:
-	flex -P grammar regular_grammar.l
-	gcc -g -lfl lex.grammar.c rg2nfa.c
-	rm *.grammar.*
+	flex -P gr regular_grammar.l
+	gcc -g -lfl lex.gr.c rg2nfa.c
+	rm *.gr.*
