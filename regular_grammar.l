@@ -198,14 +198,14 @@ void set_grammar_name( void ) {
 
 void add_non_terminal( void ) {
 
-    printf( "non-terminal: '%s'\n", yytext );
+    printf( "non-terminal symbol: '%s'\n", yytext );
 
     yylval->non_terminals[ yylval->num_non_terminals++ ] = yytext[0];
 }
 
 void add_terminal( void ) {
 
-    printf( "terminal: '%s'\n", yytext );
+    printf( "terminal symbol: '%s'\n", yytext );
 
     yylval->terminals[ yylval->num_terminals++ ] = yytext[0];
 }
@@ -219,14 +219,10 @@ void add_initial_symbol( void ) {
 
 void add_production_left( void ) {
 
-    printf( "\n%s ->\n", yytext );
-
     last_left_production = yytext[0];
 }
 
 void add_production_right( void ) {
-
-    printf( "\t%s\n", yytext );
 
     struct production* production = grammar_new_production( yylval );
 
@@ -238,6 +234,8 @@ void add_production_right( void ) {
         free_grammar( yylval );
         memory_error();
     }
+
+    strcpy( production->right, yytext );
 }
 
 struct grammar* yylval;
@@ -250,3 +248,4 @@ int main( void ) {
 
     return 0;
 }
+
