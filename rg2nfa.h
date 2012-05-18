@@ -6,6 +6,14 @@ struct grammar {
 
     char *name;
 
+    enum {
+
+        LEFT_REGULAR_GRAMMAR = 1,
+        RIGHT_REGULAR_GRAMMAR = 2,
+        NON_REGULAR_GRAMMAR = 3,
+
+    } type;
+
     int num_terminals;
     int num_non_terminals;
     int num_productions;

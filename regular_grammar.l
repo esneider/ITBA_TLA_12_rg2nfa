@@ -5,7 +5,7 @@
 #include <string.h>
 #include "rg2nfa.h"
 
-extern struct grammar *yylval;
+extern struct grammar *grammarlval;
 
 char last_left_production = 0;
 
@@ -88,7 +88,7 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 
 <PRODUCTIONS_RIGHT_COMMA>"," { BEGIN( PRODUCTIONS_LEFT ); }
 
-<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { }
+<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { yyterminate(); }
 
 
 . {
@@ -100,7 +100,7 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: invalid grammar, it should be `name=({non-terminals},"
             "{terminals},initial,{productions})'\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
@@ -108,14 +108,14 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: illegal non-terminal symbol, it should be an upper "
             "case letter\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 <NON_TERMINALS_COMMA>. {
     printf( "%d: error: missing comma between non-terminal symbols\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
@@ -123,14 +123,14 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: illegal terminal symbol, it should be a lower case "
             "letter\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 <TERMINALS_COMMA>. {
     printf( "%d: error: missing comma between terminal symbols\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
@@ -138,14 +138,14 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: illegal initial symbol, it should be an upper case "
             "letter\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 <INITIAL_SYM_END>. {
     printf( "%d: error: missing comma after the initial symbol\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
@@ -153,14 +153,14 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: illegal left side of production, it should be an upper "
             "case letter\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 <PRODUCTIONS_ARROW>. {
     printf( "%d: error: missing `->' after left side of production\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
@@ -168,82 +168,95 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
     printf( "%d: error: illegal right side of production, it shoud be a "
             "sequence of letters\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 <PRODUCTIONS_RIGHT_COMMA>. {
     printf( "%d: error: missing comma or pipe after production\n", yylineno );
 
-    free_grammar( yylval );
+    free_grammar( grammarlval );
 	return 1;
 }
 
 %%
 
+
 void set_grammar_name( void ) {
 
-    yylval = new_grammar();
+    grammarlval = new_grammar();
 
-    yylval->name = malloc( yyleng + 1 );
+    grammarlval->name = malloc( grammarleng + 1 );
 
-    if ( !yylval->name ) {
+    if ( !grammarlval->name ) {
 
-        free_grammar( yylval );
+        free_grammar( grammarlval );
         memory_error();
     }
 
-    strcpy( yylval->name, yytext );
+    strcpy( grammarlval->name, grammartext );
 }
+
 
 void add_non_terminal( void ) {
 
-    printf( "non-terminal symbol: '%s'\n", yytext );
+    printf( "non-terminal symbol: '%s'\n", grammartext );
 
-    yylval->non_terminals[ yylval->num_non_terminals++ ] = yytext[0];
+    grammarlval->non_terminals[ grammarlval->num_non_terminals++ ] = grammartext[0];
 }
+
 
 void add_terminal( void ) {
 
-    printf( "terminal symbol: '%s'\n", yytext );
+    printf( "terminal symbol: '%s'\n", grammartext );
 
-    yylval->terminals[ yylval->num_terminals++ ] = yytext[0];
+    grammarlval->terminals[ grammarlval->num_terminals++ ] = grammartext[0];
 }
+
 
 void add_initial_symbol( void ) {
 
-    printf( "initial symbol: '%s'\n", yytext );
+    printf( "initial symbol: '%s'\n", grammartext );
 
-    yylval->initial = yytext[0];
+    grammarlval->initial = grammartext[0];
 }
+
 
 void add_production_left( void ) {
 
-    last_left_production = yytext[0];
+    last_left_production = grammartext[0];
 }
+
 
 void add_production_right( void ) {
 
-    struct production* production = grammar_new_production( yylval );
+    struct production* production = grammar_new_production( grammarlval );
 
     production->left = last_left_production;
-    production->right = malloc( yyleng + 1 );
+    production->right = malloc( grammarleng + 1 );
 
     if ( !production->right ) {
 
-        free_grammar( yylval );
+        free_grammar( grammarlval );
         memory_error();
     }
 
-    strcpy( production->right, yytext );
+    strcpy( production->right, grammartext );
 }
 
-struct grammar* yylval;
+
+int grammarwrap( void ) {
+
+    return 0;
+}
+
+
+struct grammar* grammarlval;
 
 int main( void ) {
 
-    if ( !yylex() ) {
-        free_grammar( yylval );
+    if ( !grammarlex() ) {
+        free_grammar( grammarlval );
     }
 
     return 0;
