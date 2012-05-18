@@ -2,6 +2,7 @@
 *.swp
 *.tab.*
 *.yy.*
+*.gr.*
 *.output
 a.out
 a.out.*
