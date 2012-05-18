@@ -1,0 +1,38 @@
+#ifndef __RG2NFA_H__
+#define __RG2NFA_H__
+
+
+struct grammar {
+
+    char *name;
+
+    int num_terminals;
+    int num_non_terminals;
+    int num_productions;
+
+    char *terminals;
+    char *non_terminals;
+    char initial;
+
+    struct production {
+
+        char left;
+        char *right;
+
+    } *productions;
+
+    int productions_capacity;
+};
+
+
+void memory_error( void );
+
+struct grammar* new_grammar( void );
+
+void free_grammar( struct grammar* grammar );
+
+struct production* grammar_new_production( struct grammar* grammar );
+
+
+#endif /* __RG2NFA_H__ */
+

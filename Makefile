@@ -1,5 +1,5 @@
 
 all:
 	flex regular_grammar.l
-	gcc -lfl lex.yy.c
+	gcc -g -lfl lex.yy.c rg2nfa.c
 	rm *.yy.*
