@@ -176,17 +176,48 @@ void add_production_left( void ) {
 
 void add_production_right( void ) {
 
-    char (*right)[2];
+    int pos_text, pos_right;
+    char (*right)[2] = grammar_new_production( grlval, last_left_production );
 
-    if ( grleng > 2 ) {
+    for ( pos_text = pos_right = 0; pos_text < grleng; pos_text++ ) {
 
-        grlval->type = NON_REGULAR_GRAMMAR;
-        return;
+        if ( grtext[ pos_text ] != ' '  && grtext[ pos_text ] != '\t' &&
+             grtext[ pos_text ] != '\f' && grtext[ pos_text ] != '\v' &&
+             grtext[ pos_text ] != '\n' && grtext[ pos_text ] != '\r' ) {
+
+            switch ( pos_right++ ) {
+
+                case 0:
+
+                    (*right)[0] = grtext[ pos_text ];
+
+                    if ( (*right)[0] == '\\' )
+                        break;
+
+                    if ( (*right)[0] < 'a' )
+                        grlval->type |= LEFT_REGULAR_GRAMMAR;
+                    else
+                        grlval->type |= RIGHT_REGULAR_GRAMMAR;
+
+                    break;
+
+                case 1:
+
+                    (*right)[1] = grtext[ pos_text ];
+
+                    if ( ( (*right)[0] < 'a' ) ^ ( (*right)[1] < 'a' ) != 1 )
+                        grlval->type = NON_REGULAR_GRAMMAR;
+
+                    break;
+
+                default:
+
+                    grlval->type = NON_REGULAR_GRAMMAR;
+
+                    break;
+            }
+        }
     }
-
-    right = grammar_new_production( grlval, last_left_production );
-
-    memcpy( right, grtext, 2 );
 }
 
 
