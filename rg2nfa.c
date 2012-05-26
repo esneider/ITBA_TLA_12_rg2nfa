@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "rg2nfa.h"
 
 
@@ -21,7 +22,7 @@ struct grammar* new_grammar( void ) {
         memory_error();
     }
 
-    grammar->terminals = calloc( 1, 256 );
+    grammar->terminals = calloc( 1, 0x100 );
 
     if ( !grammar->terminals ) {
 
@@ -29,7 +30,7 @@ struct grammar* new_grammar( void ) {
         memory_error();
     }
 
-    grammar->non_terminals = calloc( 1, 256 );
+    grammar->non_terminals = calloc( 1, 0x100 );
 
     if ( !grammar->non_terminals ) {
 
@@ -37,11 +38,15 @@ struct grammar* new_grammar( void ) {
         memory_error();
     }
 
+    memset( grammar->productions, '\0', sizeof( grammar->productions ) );
+
     return grammar;
 }
 
 
 void free_grammar( struct grammar* grammar ) {
+
+    int i;
 
     if ( !grammar )
         return;
@@ -55,43 +60,40 @@ void free_grammar( struct grammar* grammar ) {
     if ( grammar->non_terminals )
         free( grammar->non_terminals );
 
-    if ( grammar->productions ) {
-
-        while ( grammar->num_productions ) {
-
-            free( grammar->productions[ --grammar->num_productions ].right );
-        }
-
-        free( grammar->productions );
-    }
+    for ( i = 0; i < 0x100; i++ )
+        if ( grammar->productions[i].rights )
+            free( grammar->productions[i].rights );
 
     free( grammar );
 }
 
 
-struct production* grammar_new_production( struct grammar* grammar ) {
+char (*grammar_new_production( struct grammar* grammar, char left ))[2] {
 
-    struct production* productions;
+    struct production *production;
+    char (*rights)[2];
 
     if ( !grammar )
         return NULL;
 
-    if ( grammar->num_productions >= grammar->productions_capacity ) {
+    production = grammar->productions + left;
 
-        grammar->productions_capacity *= 2;
-        grammar->productions_capacity += 1;
+    if ( production->num_rights >= production->cap_rights ) {
 
-        productions = realloc( grammar->productions, grammar->productions_capacity );
+        production->cap_rights *= 2;
+        production->cap_rights += 1;
 
-        if ( !productions ) {
+        rights = realloc( production->rights, production->cap_rights );
+
+        if ( !rights ) {
 
             free_grammar( grammar );
             memory_error();
         }
 
-        grammar->productions = productions;
+        production->rights = rights;
     }
 
-    return grammar->productions + grammar->num_productions++;
+    return production->rights + production->num_rights;
 }
 

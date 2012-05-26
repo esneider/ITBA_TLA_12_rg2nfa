@@ -24,12 +24,12 @@ struct grammar {
 
     struct production {
 
-        char left;
-        char *right;
+        char (*rights)[2];
+        int num_rights;
+        int cap_rights;
 
-    } *productions;
+    } productions[ 0x100 ];
 
-    int productions_capacity;
 };
 
 
@@ -39,7 +39,7 @@ struct grammar* new_grammar( void );
 
 void free_grammar( struct grammar* grammar );
 
-struct production* grammar_new_production( struct grammar* grammar );
+char (*grammar_new_production( struct grammar* grammar, char left ))[2];
 
 
 #endif /* __RG2NFA_H__ */

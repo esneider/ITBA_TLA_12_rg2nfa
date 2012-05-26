@@ -91,95 +91,41 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 <PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { yyterminate(); }
 
 
-. {
-    printf( "%d: error: illegal grammar name\n", yylineno );
-	return 1;
-}
+. { grlval = NULL; return grerror( "illegal grammar name" ); }
 
-<DEF_BEGIN>. {
-    printf( "%d: error: invalid grammar, it should be `name=({non-terminals},"
-            "{terminals},initial,{productions})'\n", yylineno );
+<DEF_BEGIN>. { return grerror( "invalid grammar, it should be `name=({non-terminals},{terminals},initial,{productions})'" ); }
 
-    free_grammar( grlval );
-	return 1;
-}
+<NON_TERMINALS>. { return grerror( "illegal non-terminal symbol, it should be an upper case letter" ); }
 
-<NON_TERMINALS>. {
-    printf( "%d: error: illegal non-terminal symbol, it should be an upper "
-            "case letter\n", yylineno );
+<NON_TERMINALS_COMMA>. { return grerror( "missing comma between non-terminal symbols" ); }
 
-    free_grammar( grlval );
-	return 1;
-}
+<TERMINALS>. { return grerror( "illegal terminal symbol, it should be a lower case letter" ); }
 
-<NON_TERMINALS_COMMA>. {
-    printf( "%d: error: missing comma between non-terminal symbols\n", yylineno );
+<TERMINALS_COMMA>. { return grerror( "missing comma between terminal symbols" ); }
 
-    free_grammar( grlval );
-	return 1;
-}
+<INITIAL_SYM>. { return grerror( "illegal initial symbol, it should be an upper case letter" ); }
 
-<TERMINALS>. {
-    printf( "%d: error: illegal terminal symbol, it should be a lower case "
-            "letter\n", yylineno );
+<INITIAL_SYM_END>. { return grerror( "missing comma after the initial symbol" ); }
 
-    free_grammar( grlval );
-	return 1;
-}
+<PRODUCTIONS_LEFT>. { return grerror( "illegal left side of production, it should be an upper case letter" ); }
 
-<TERMINALS_COMMA>. {
-    printf( "%d: error: missing comma between terminal symbols\n", yylineno );
+<PRODUCTIONS_ARROW>. { return grerror( "missing `->' after left side of production" ); }
 
-    free_grammar( grlval );
-	return 1;
-}
+<PRODUCTIONS_RIGHT>. { return grerror( "illegal right side of production, it shoud be a sequence of letters" ); }
 
-<INITIAL_SYM>. {
-    printf( "%d: error: illegal initial symbol, it should be an upper case "
-            "letter\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
-
-<INITIAL_SYM_END>. {
-    printf( "%d: error: missing comma after the initial symbol\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
-
-<PRODUCTIONS_LEFT>. {
-    printf( "%d: error: illegal left side of production, it should be an upper "
-            "case letter\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
-
-<PRODUCTIONS_ARROW>. {
-    printf( "%d: error: missing `->' after left side of production\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
-
-<PRODUCTIONS_RIGHT>. {
-    printf( "%d: error: illegal right side of production, it shoud be a "
-            "sequence of letters\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
-
-<PRODUCTIONS_RIGHT_COMMA>. {
-    printf( "%d: error: missing comma or pipe after production\n", yylineno );
-
-    free_grammar( grlval );
-	return 1;
-}
+<PRODUCTIONS_RIGHT_COMMA>. { return grerror( "missing comma or pipe after production" ); }
 
 %%
+
+
+int grerror( const char *msg ) {
+
+    printf( "%d: error: %s\n", yylineno, msg );
+
+    free_grammar( grlval );
+
+	return 1;
+}
 
 
 void set_grammar_name( void ) {
@@ -230,18 +176,17 @@ void add_production_left( void ) {
 
 void add_production_right( void ) {
 
-    struct production* production = grammar_new_production( grlval );
+    char (*right)[2];
 
-    production->left = last_left_production;
-    production->right = malloc( grleng + 1 );
+    if ( grleng > 2 ) {
 
-    if ( !production->right ) {
-
-        free_grammar( grlval );
-        memory_error();
+        grlval->type = NON_REGULAR_GRAMMAR;
+        return;
     }
 
-    strcpy( production->right, grtext );
+    right = grammar_new_production( grlval, last_left_production );
+
+    memcpy( right, grtext, 2 );
 }
 
 
