@@ -1,0 +1,13 @@
+nnn = (
+    {A,B,C,D,E,F,G},
+    {b,c,e,f,g},
+    A,
+    {
+        A->bB | cC,
+        B->cC | eE,
+        C->eE | fF,
+        D->gG | eE,
+        E-> \ | fF,
+        G-> \
+    }
+)
