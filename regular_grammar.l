@@ -265,8 +265,16 @@ int main( void ) {
         }
 
         normalize_grammar( grlval );
+
         print_grammar( grlval );
+
+        struct grammar *new = clean_grammar( grlval );
+
         free_grammar( grlval );
+
+        print_grammar( new );
+
+        free_grammar( new );
     }
 
     return 0;

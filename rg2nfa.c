@@ -105,7 +105,7 @@ static void add_production( struct grammar *grammar, int left, char right[2] ) {
 }
 
 
-void normalize_grammar( struct grammar* grammar ) {
+void normalize_grammar( struct grammar *grammar ) {
 
     if ( !grammar->empty )
 
@@ -190,6 +190,8 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
 
     struct grammar *right = new_grammar();
 
+    /* name */
+
     right->name = malloc( strlen( left->name ) + 1 );
 
     if ( !right->name )
@@ -197,9 +199,12 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
 
     strcpy( right->name, left->name );
 
+    /* type */
     right->type = RIGHT_REGULAR_GRAMMAR;
 
     normalize_grammar( left );
+
+    /* initial */
 
     for ( int i = 'A'; i <= 'Z'; i++ )
 
@@ -215,15 +220,23 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
         exit(1);
     }
 
+    /* empty */
+
     right->empty = left->initial;
     (*grammar_new_production( right, right->empty ))[0] = '\\';
+
+    /* terminals */
 
     right->num_terminals = left->num_terminals;
     strcpy( right->terminals, left->terminals );
 
+    /* non-terminals */
+
     right->num_non_terminals = left->num_non_terminals;
     strcpy( right->non_terminals, left->non_terminals );
     right->non_terminals[ right->num_non_terminals++ ] = right->initial;
+
+    /* productions */
 
     for ( int i = 0; i < 0x100; i++ ) {
 
@@ -277,5 +290,140 @@ void print_grammar( struct grammar *grammar ) {
     }
 
     printf( "\t}\n)\n" );
+}
+
+
+static void walk_grammar( struct grammar *grammar, int letter, bool *visited ) {
+
+    if ( !letter || visited[ letter ] )
+        return;
+
+    visited[ letter ] = true;
+
+    for ( int i = 0; i < grammar->productions[ letter ].num_rights; i++ )
+
+        walk_grammar( grammar, grammar->productions[ letter ].rights[i][1], visited );
+}
+
+
+struct grammar* clean_grammar( struct grammar *grammar ) {
+
+    struct grammar *new = new_grammar();
+
+    /* name */
+
+    new->name = malloc( strlen( grammar->name ) + 1 );
+
+    if ( !new->name )
+        memory_error();
+
+    strcpy( new->name, grammar->name );
+
+    /* type */
+
+    bool left = false;
+
+    if ( grammar->type == LEFT_REGULAR_GRAMMAR ) {
+
+        left = true;
+        grammar = left_to_right_grammar( grammar );
+    }
+
+    normalize_grammar( grammar );
+
+    new->type = RIGHT_REGULAR_GRAMMAR;
+
+    /* terminals */
+
+    new->num_terminals = grammar->num_terminals;
+    strcpy( new->terminals, grammar->terminals );
+
+    /* initial */
+
+    new->initial = grammar->initial;
+
+    /* productions */
+
+    bool visited_down[ 0x100 ] = {1, 0};
+
+    walk_grammar( grammar, grammar->initial, visited_down );
+
+
+    bool visited_up[ 0x100 ] = {1, 0};
+
+    char empty[ 0x100 ] = {0};
+    int num_empty = 0;
+
+    struct grammar *reversed = new_grammar();
+
+    for ( int i = 0; i < 0x100; i++ ) {
+
+        struct production *production = grammar->productions + i;
+
+        for ( int j = 0; j < production->num_rights; j++ ) {
+
+            if ( production->rights[j][1] ) {
+
+                (*grammar_new_production( reversed, production->rights[j][1] ))[1] = i;
+
+            } else {
+
+                empty[ num_empty++ ] = i;
+            }
+        }
+    }
+
+    for ( int i = 0; i < num_empty; i++ )
+        walk_grammar( reversed, empty[i], visited_up );
+
+    for ( int i = 0; i < 0x100; i++ )
+        visited_up[i] &= visited_down[i];
+
+    // TODO: remove this
+
+    printf("<");
+    for ( int i = 0; i < 0x100; i++ )
+        if ( visited_up[i] )
+            printf( "%c,", i );
+    printf(">\n");
+
+    for ( int i = 0; i < 0x100; i++ ) {
+
+        if ( visited_up[i] ) {
+
+            struct production* production = grammar->productions + i;
+
+            for ( int j = 0; j < production->num_rights; j++ ) {
+
+                if ( visited_up[ (int)production->rights[j][1] ] ) {
+
+                    memcpy( grammar_new_production( new, i ), production->rights[j], 2 );
+
+                    if ( !production->rights[j][1] )
+
+                        new->empty = i;
+                }
+            }
+        }
+    }
+
+    /* non-terminals */
+
+    new->num_non_terminals = 0;
+
+    for ( int i = 0; i < 0x100; i++ )
+
+        if ( new->productions[i].num_rights )
+
+            new->non_terminals[ new->num_non_terminals++ ] = i;
+
+    /* clean after */
+
+    if ( left )
+        free_grammar( grammar );
+
+    normalize_grammar( new );
+
+    return new;
 }
 

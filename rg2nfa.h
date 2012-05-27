@@ -38,15 +38,17 @@ void memory_error( void );
 
 struct grammar* new_grammar( void );
 
-void free_grammar( struct grammar* grammar );
+void free_grammar( struct grammar *grammar );
 
-char (*grammar_new_production( struct grammar* grammar, char left ))[2];
+char (*grammar_new_production( struct grammar *grammar, char left ))[2];
 
-void normalize_grammar( struct grammar* grammar );
+void normalize_grammar( struct grammar *grammar );
 
 struct grammar* left_to_right_grammar( struct grammar *left );
 
 void print_grammar( struct grammar *grammar );
+
+struct grammar* clean_grammar( struct grammar *grammar );
 
 
 #endif /* __RG2NFA_H__ */
