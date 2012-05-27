@@ -104,6 +104,7 @@ static void add_production( struct grammar *grammar, int left, char right[2] ) {
     memcpy( grammar_new_production( grammar, left ), right, 2 );
 }
 
+
 void normalize_grammar( struct grammar* grammar ) {
 
     if ( !grammar->empty )
@@ -175,7 +176,9 @@ void normalize_grammar( struct grammar* grammar ) {
     grammar->num_non_terminals = 0;
 
     for ( int i = 0; i < 0x100; i++ )
+
         if ( grammar->productions[i].num_rights )
+
             grammar->non_terminals[ grammar->num_non_terminals++ ] = i;
 }
 

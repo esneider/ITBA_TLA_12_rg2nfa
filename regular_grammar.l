@@ -253,6 +253,17 @@ int main( void ) {
     if ( !grlex() ) {
 
         print_grammar( grlval );
+
+        if ( grlval->type == LEFT_REGULAR_GRAMMAR ) {
+
+            struct grammar *temp = left_to_right_grammar( grlval );
+
+            free_grammar( grlval );
+            grlval = temp;
+
+            print_grammar( grlval );
+        }
+
         normalize_grammar( grlval );
         print_grammar( grlval );
         free_grammar( grlval );

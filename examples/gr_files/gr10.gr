@@ -1,0 +1,1 @@
+hjkl = ( {S,A,B}, {a,b}, S, { S->Ab, A->Sb, A->Bb, B->Ba | \ } )
