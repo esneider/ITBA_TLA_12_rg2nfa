@@ -89,8 +89,27 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 <NODES,NODE_TYPE,NODE_BEFORE_NAME,NODE_NAME,NODE_LABEL,PRODUCTION_MIDDLE,PRODUCTION_RIGHT,PRODUCTION_LABEL,PRODUCTION_TERMINAL><<EOF>> { return faerror( "unexpected end of file" ); }
 
 
-. {}
+. { return faerror("The input is not a digraph or valid dot file"); }
 
+<NODES>. { return faerror("Invalid node declaration"); }
+
+<NODE_TYPE>. { return faerror("Node type is not one of circle or doublecircle"); }
+
+<NODE_BEFORE_NAME>. { return faerror("No idea what this is."); }
+
+<NODE_NAME>. { return faerror("A node name must only contain alphanumeric characters."); }
+
+<NODE_LABEL>. { return faerror("Invalid node label format."); }
+
+<PRODUCTION_MIDDLE>. { return faerror("An edge must be defined as src -> dest"); }
+
+<PRODUCTION_RIGHT>. { return faerror("The right side of -> must be a valid node name."); }
+
+<PRODUCTION_LABEL>. { return faerror("An edge label must be present"); }
+
+<PRODUCTION_TERMINAL>. { return faerror("Invalid label. It must only contain alpha characters."); }
+
+<DEF_END>. { return faerror("Invalid character at end of definition"); }
 
 %%
 
