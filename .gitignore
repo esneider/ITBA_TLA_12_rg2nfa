@@ -3,6 +3,7 @@
 *.tab.*
 *.yy.*
 *.gr.*
+*.fa.*
 *.output
 a.out
 a.out.*

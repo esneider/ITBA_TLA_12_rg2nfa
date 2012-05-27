@@ -9,6 +9,12 @@ extern struct grammar *grlval;
 
 bool terminal;
 
+static int faerror( const char *msg );
+static void add_node_name( void );
+static void add_production_left( void );
+static void add_production_right( void );
+static void add_production_terminal( void );
+
 %}
 
 whitespace     [ \t\f\v\n\r]
@@ -17,7 +23,7 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 %x NODES NODE_TYPE NODE_BEFORE_NAME NODE_NAME NODE_LABEL PRODUCTION_MIDDLE
 %x PRODUCTION_RIGHT PRODUCTION_LABEL PRODUCTION_TERMINAL DEF_END
 
-%optino yylineno
+%option yylineno
 %option nounput
 
 %%
@@ -78,7 +84,7 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 <PRODUCTION_TERMINAL>[a-z]"\""{comment}"]"{comment}";"{comment} { add_production_terminal(); BEGIN( NODES ); }
 
 
-<DEF_END><<EOF>> {}
+<DEF_END><<EOF>> { return 0; }
 
 <NODES,NODE_TYPE,NODE_BEFORE_NAME,NODE_NAME,NODE_LABEL,PRODUCTION_MIDDLE,PRODUCTION_RIGHT,PRODUCTION_LABEL,PRODUCTION_TERMINAL><<EOF>> { return faerror( "unexpected end of file" ); }
 
@@ -99,4 +105,38 @@ static int faerror( const char *msg ) {
 }
 
 
+static void add_node_name( void ) {
+
+    printf( "node: %s\n", fatext );
+}
+
+
+static void add_production_left( void ) {
+
+    printf( "prod_left: %s\n", fatext );
+}
+
+
+static void add_production_right( void ) {
+
+    printf( "prod_right: %s\n", fatext );
+}
+
+
+static void add_production_terminal( void ) {
+
+    printf( "terminal: %c\n", fatext[0] );
+}
+
+
+int fawrap( void ) {
+
+    return 1;
+}
+
+
+int main ( void ) {
+
+    falex();
+}
 
