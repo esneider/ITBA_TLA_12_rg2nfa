@@ -12,13 +12,13 @@ char last_left_production = 0;
 
 bool ok = false;
 
-int grerror( const char *msg );
-void set_grammar_name( void );
-void add_non_terminal( void );
-void add_terminal( void );
-void add_initial_symbol( void );
-void add_production_left( void );
-void add_production_right( void );
+static int grerror( const char *msg );
+static void set_grammar_name( void );
+static void add_non_terminal( void );
+static void add_terminal( void );
+static void add_initial_symbol( void );
+static void add_production_left( void );
+static void add_production_right( void );
 
 %}
 
@@ -130,7 +130,7 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 %%
 
 
-int grerror( const char *msg ) {
+static int grerror( const char *msg ) {
 
     printf( "%d: error: %s\n", yylineno, msg );
 
@@ -140,7 +140,7 @@ int grerror( const char *msg ) {
 }
 
 
-void set_grammar_name( void ) {
+static void set_grammar_name( void ) {
 
     grlval = new_grammar();
 
@@ -156,7 +156,7 @@ void set_grammar_name( void ) {
 }
 
 
-void add_non_terminal( void ) {
+static void add_non_terminal( void ) {
 
     printf( "non-terminal symbol: '%s'\n", grtext );
 
@@ -164,7 +164,7 @@ void add_non_terminal( void ) {
 }
 
 
-void add_terminal( void ) {
+static void add_terminal( void ) {
 
     printf( "terminal symbol: '%s'\n", grtext );
 
@@ -172,7 +172,7 @@ void add_terminal( void ) {
 }
 
 
-void add_initial_symbol( void ) {
+static void add_initial_symbol( void ) {
 
     printf( "initial symbol: '%s'\n", grtext );
 
@@ -180,13 +180,13 @@ void add_initial_symbol( void ) {
 }
 
 
-void add_production_left( void ) {
+static void add_production_left( void ) {
 
     last_left_production = grtext[0];
 }
 
 
-void add_production_right( void ) {
+static void add_production_right( void ) {
 
     char (*right)[2] = grammar_new_production( grlval, last_left_production );
 
