@@ -379,14 +379,6 @@ struct grammar* clean_grammar( struct grammar *grammar ) {
     for ( int i = 0; i < 0x100; i++ )
         visited_up[i] &= visited_down[i];
 
-    // TODO: remove this
-
-    printf("<");
-    for ( int i = 0; i < 0x100; i++ )
-        if ( visited_up[i] )
-            printf( "%c,", i );
-    printf(">\n");
-
     for ( int i = 0; i < 0x100; i++ ) {
 
         if ( visited_up[i] ) {

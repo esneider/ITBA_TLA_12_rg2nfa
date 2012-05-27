@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "rg2nfa.h"
 
 extern struct grammar *grlval;
 
 char last_left_production = 0;
+
+bool ok = false;
 
 int grerror( const char *msg );
 void set_grammar_name( void );
@@ -90,11 +93,12 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 
 <PRODUCTIONS_RIGHT_COMMA>"," { BEGIN( PRODUCTIONS_LEFT ); }
 
-<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { BEGIN( DEF_END ); }
+<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { ok = true; BEGIN( DEF_END ); }
 
 
 <DEF_END><<EOF>> { return grlval->type == NON_REGULAR_GRAMMAR; }
 
+<INITIAL,DEF_BEGIN,NON_TERMINALS,NON_TERMINALS_COMMA,TERMINALS,TERMINALS_COMMA,INITIAL_SYM,INITIAL_SYM_END,PRODUCTIONS_LEFT,PRODUCTIONS_ARROW,PRODUCTIONS_RIGHT,PRODUCTIONS_RIGHT_COMMA><<EOF>> { return grerror( "unexpected end of file" ); }
 
 . { grlval = NULL; return grerror( "illegal grammar name" ); }
 
@@ -237,10 +241,13 @@ int grwrap( void ) {
         [ NON_REGULAR_GRAMMAR ]   = "non-",
     };
 
-    printf( "the input is a valid %sregular grammar\n", out[ grlval->type ] );
+    if ( ok ) {
 
-    if ( grlval->type == NON_REGULAR_GRAMMAR )
-        grerror( "non-regular grammar" );
+        printf( "the input is a valid %sregular grammar\n", out[ grlval->type ] );
+
+        if ( grlval->type == NON_REGULAR_GRAMMAR )
+            grerror( "non-regular grammar" );
+    }
 
     return 1;
 }
@@ -252,29 +259,24 @@ int main( void ) {
 
     if ( !grlex() ) {
 
-        print_grammar( grlval );
-
         if ( grlval->type == LEFT_REGULAR_GRAMMAR ) {
 
             struct grammar *temp = left_to_right_grammar( grlval );
 
             free_grammar( grlval );
-            grlval = temp;
 
-            print_grammar( grlval );
+            grlval = temp;
         }
 
-        normalize_grammar( grlval );
-
-        print_grammar( grlval );
-
-        struct grammar *new = clean_grammar( grlval );
+        struct grammar *temp = clean_grammar( grlval );
 
         free_grammar( grlval );
 
-        print_grammar( new );
+        grlval = temp;
 
-        free_grammar( new );
+        print_grammar( grlval );
+
+        free_grammar( grlval );
     }
 
     return 0;
