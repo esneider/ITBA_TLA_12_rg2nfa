@@ -103,13 +103,12 @@ void normalize_grammar( struct grammar* grammar ) {
                 grammar->empty = i;
 
                 (*grammar_new_production( grammar, i ))[0] = '\\';
-
                 break;
             }
 
     if ( !grammar->empty ) {
 
-        printf( "Aborting since *all* upcase letters are used for non empty rules\n" );
+        printf( "Aborting due to lack of upcase letters\n" );
         exit(1);
     }
 
@@ -163,11 +162,76 @@ void normalize_grammar( struct grammar* grammar ) {
 
         for ( int j = 0; j < production->num_rights; j++ )
 
-            if ( production->rigths[j][1] )
+            if ( production->rigths[j][1] && production->rights[j][0] != '\\' )
 
                 memcpy( production->rights[ num_rights++ ], production->rights[j], 2 );
 
         production->num_rights = num_rights;
     }
+
+    // TODO: update non_terminals and num_non_terminals
+}
+
+
+struct grammar* left_to_right_grammar( struct grammar *left ) {
+
+    struct grammar *right = new_grammar();
+
+    right->name = malloc( strlen( left->name ) + 1 );
+
+    if ( !right->name )
+        memory_error();
+
+    strcpy( right->name, left->name );
+
+    right->type = RIGHT_REGULAR_GRAMMAR;
+
+    normalize_grammar( left );
+
+    for ( int i = 'A'; i <= 'Z'; i++ )
+
+        if ( !left->productions[i].num_rights ) {
+
+            right->initial = i;
+            break;
+        }
+
+    if ( !right->initial ) {
+
+        printf( "Aborting due to lack of upcase letters\n" );
+        exit(1);
+    }
+
+    right->empty = left->initial;
+    (*grammar_new_production( right, right->empty ))[0] = '\\';
+
+    right->num_terminals = left->num_terminals;
+    strcpy( right->terminals, left->terminals );
+
+    right->num_non_terminals = left->num_non_terminals;
+    strcpy( right->non_terminals, left->non_terminals );
+    right->non_terminals[ right->num_non_terminals++ ] = right->initial;
+
+    for ( int i = 0; i < 0x100; i++ ) {
+
+        struct production* production = left->productions + i;
+
+        for ( int j = 0; j < production->num_rights; j++ ) {
+
+            if ( production->rights[j][1] ) {
+
+                char (*reverse)[2] = grammar_new_production( right, production->rights[j][0] );
+
+                reverse[0] = production->rights[j][1];
+                reverse[1] = i;
+
+            } else {
+
+                (*grammar_new_production( right, right->initial ))[0] = i;
+            }
+        }
+    }
+
+    return right;
 }
 
