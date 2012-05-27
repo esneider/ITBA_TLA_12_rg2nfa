@@ -46,6 +46,8 @@ void normalize_grammar( struct grammar* grammar );
 
 struct grammar* left_to_right_grammar( struct grammar *left );
 
+void print_grammar( struct grammar *grammar );
+
 
 #endif /* __RG2NFA_H__ */
 

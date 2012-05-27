@@ -43,7 +43,7 @@ struct grammar* new_grammar( void ) {
 }
 
 
-void free_grammar( struct grammar* grammar ) {
+void free_grammar( struct grammar *grammar ) {
 
     if ( !grammar )
         return;
@@ -65,7 +65,7 @@ void free_grammar( struct grammar* grammar ) {
 }
 
 
-char (*grammar_new_production( struct grammar* grammar, char left ))[2] {
+char (*grammar_new_production( struct grammar *grammar, char left ))[2] {
 
     if ( !grammar )
         return NULL;
@@ -88,9 +88,21 @@ char (*grammar_new_production( struct grammar* grammar, char left ))[2] {
         production->rights = rights;
     }
 
-    return production->rights + production->num_rights;
+    return production->rights + production->num_rights++;
 }
 
+
+static void add_production( struct grammar *grammar, int left, char right[2] ) {
+
+    struct production *production = grammar->productions + left;
+
+    for ( int i = 0; i < production->num_rights; i++ )
+
+        if ( !memcmp( right, production->rights[i], 2 ) )
+            return;
+
+    memcpy( grammar_new_production( grammar, left ), right, 2 );
+}
 
 void normalize_grammar( struct grammar* grammar ) {
 
@@ -118,42 +130,33 @@ void normalize_grammar( struct grammar* grammar ) {
 
         for ( int j = 0; j < production->num_rights; j++ ) {
 
-            if ( !production->rigths[j][1] ) {
+            if ( !production->rights[j][1] ) {
 
                 if ( production->rights[j][0] >= 'a' ) {
 
+                    char replace[2];
+
                     if ( grammar->type == RIGHT_REGULAR_GRAMMAR ) {
 
-                        production->rights[j][1] = grammar->empty;
+                        replace[0] = production->rights[j][0];
+                        replace[1] = grammar->empty;
 
                     } else {
 
-                        production->rights[j][1] = production->rights[j][0];
-                        production->rights[j][0] = grammar->empty;
+                        replace[0] = grammar->empty;
+                        replace[1] = production->rights[j][0];
                     }
+
+                    add_production( grammar, i, replace );
 
                 } else
                 if ( production->rights[j][0] <= 'Z' ) {
 
-                    struct production *replace = grammar->productions + productions->rights[j][0];
+                    struct production *replace = grammar->productions + production->rights[j][0];
 
-                    for ( int k = 0; k < replace->num_rights; k++ ) {
+                    for ( int k = 0; k < replace->num_rights; k++ )
 
-                        bool repeated = false;
-
-                        for ( int l = 0; l < production->num_rights; l++ )
-
-                            if ( !memcmp( replace->rights[k], production->rights[l], 2 ) ) {
-
-                                repeated = true;
-                                break;
-                            }
-
-                        if ( !repeated ) {
-
-                            memcpy( grammar_new_production( grammar, i ), replace->rights[k], 2 );
-                        }
-                    }
+                        add_production( grammar, i, replace->rights[k] );
                 }
             }
         }
@@ -162,18 +165,25 @@ void normalize_grammar( struct grammar* grammar ) {
 
         for ( int j = 0; j < production->num_rights; j++ )
 
-            if ( production->rigths[j][1] && production->rights[j][0] != '\\' )
+            if ( production->rights[j][1] || production->rights[j][0] == '\\' )
 
                 memcpy( production->rights[ num_rights++ ], production->rights[j], 2 );
 
         production->num_rights = num_rights;
     }
 
-    // TODO: update non_terminals and num_non_terminals
+    grammar->num_non_terminals = 0;
+
+    for ( int i = 0; i < 0x100; i++ )
+        if ( grammar->productions[i].num_rights )
+            grammar->non_terminals[ grammar->num_non_terminals++ ] = i;
 }
 
 
 struct grammar* left_to_right_grammar( struct grammar *left ) {
+
+    if ( !left || left->type == RIGHT_REGULAR_GRAMMAR )
+        return left;
 
     struct grammar *right = new_grammar();
 
@@ -222,8 +232,8 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
 
                 char (*reverse)[2] = grammar_new_production( right, production->rights[j][0] );
 
-                reverse[0] = production->rights[j][1];
-                reverse[1] = i;
+                (*reverse)[0] = production->rights[j][1];
+                (*reverse)[1] = i;
 
             } else {
 
@@ -233,5 +243,36 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
     }
 
     return right;
+}
+
+
+void print_grammar( struct grammar *grammar ) {
+
+    printf( "%s = (\n", grammar->name );
+
+    printf( "\t{" );
+    for ( char *nt = grammar->non_terminals; *nt; nt++ )
+        printf( " %c,", *nt );
+    printf( " }\n" );
+
+    printf( "\t{" );
+    for ( char *nt = grammar->terminals; *nt; nt++ )
+        printf( " %c,", *nt );
+    printf( " }\n" );
+
+    printf( "\t%c,\n", grammar->initial );
+
+    printf( "\t{\n" );
+
+    for ( int i = 0; i < 0x100; i++ ) {
+
+        struct production *production = grammar->productions + i;
+
+        for ( int j = 0; j < production->num_rights; j++ )
+
+            printf( "\t\t%c->%.2s\n", i, production->rights[j] );
+    }
+
+    printf( "\t}\n)\n" );
 }
 

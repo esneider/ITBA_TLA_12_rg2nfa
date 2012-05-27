@@ -252,6 +252,9 @@ int main( void ) {
 
     if ( !grlex() ) {
 
+        print_grammar( grlval );
+        normalize_grammar( grlval );
+        print_grammar( grlval );
         free_grammar( grlval );
     }
 
