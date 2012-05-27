@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include "rg2nfa.h"
 
-extern struct grammar *grlval;
+extern struct grammar *falval;
 
 bool terminal;
 
@@ -81,7 +82,15 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 <PRODUCTION_LABEL>{comment}"["{comment}"label"{comment}"="{comment}"\"" { BEGIN( PRODUCTION_TERMINAL ); }
 
 
-<PRODUCTION_TERMINAL>[a-z]"\""{comment}"]"{comment}";"{comment} { add_production_terminal(); BEGIN( NODES ); }
+<PRODUCTION_TERMINAL>[a-z] { add_production_terminal(); }
+
+<PRODUCTION_TERMINAL>"\\\\" { add_production_terminal(); }
+
+<PRODUCTION_TERMINAL>"|" { }
+
+<PRODUCTION_TERMINAL>"/" { }
+
+<PRODUCTION_TERMINAL>"\""{comment}"]"{comment}";"{comment} { BEGIN( NODES ); }
 
 
 <DEF_END><<EOF>> { return 0; }

@@ -8,9 +8,9 @@
 
 extern struct grammar *grlval;
 
-char last_left_production = 0;
+static char last_left_production = 0;
 
-bool ok = false;
+static bool ok = false;
 
 static int grerror( const char *msg );
 static void set_grammar_name( void );
