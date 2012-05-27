@@ -21,6 +21,7 @@ struct grammar {
     char *terminals;
     char *non_terminals;
     char initial;
+    char empty;
 
     struct production {
 
@@ -40,6 +41,8 @@ struct grammar* new_grammar( void );
 void free_grammar( struct grammar* grammar );
 
 char (*grammar_new_production( struct grammar* grammar, char left ))[2];
+
+void normalize_grammar( struct grammar* grammar );
 
 
 #endif /* __RG2NFA_H__ */

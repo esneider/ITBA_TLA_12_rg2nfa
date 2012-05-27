@@ -9,6 +9,7 @@ extern struct grammar *grlval;
 
 char last_left_production = 0;
 
+int grerror( const char *msg );
 void set_grammar_name( void );
 void add_non_terminal( void );
 void add_terminal( void );
@@ -36,9 +37,10 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 
 %x DEF_BEGIN NON_TERMINALS NON_TERMINALS_COMMA TERMINALS TERMINALS_COMMA
 %x INITIAL_SYM INITIAL_SYM_END PRODUCTIONS_LEFT PRODUCTIONS_ARROW
-%x PRODUCTIONS_RIGHT PRODUCTIONS_RIGHT_COMMA
+%x PRODUCTIONS_RIGHT PRODUCTIONS_RIGHT_COMMA DEF_END
 
 %option yylineno
+%option nounput
 
 %%
 
@@ -88,7 +90,10 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 
 <PRODUCTIONS_RIGHT_COMMA>"," { BEGIN( PRODUCTIONS_LEFT ); }
 
-<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { yyterminate(); }
+<PRODUCTIONS_RIGHT_COMMA,PRODUCTIONS_LEFT>{def_end} { BEGIN( DEF_END ); }
+
+
+<DEF_END><<EOF>> { return grlval->type == NON_REGULAR_GRAMMAR; }
 
 
 . { grlval = NULL; return grerror( "illegal grammar name" ); }
@@ -113,7 +118,10 @@ def_delimiter_initial_sym_end   ","{whitespace}*"{"
 
 <PRODUCTIONS_RIGHT>. { return grerror( "illegal right side of production, it shoud be a sequence of letters" ); }
 
-<PRODUCTIONS_RIGHT_COMMA>. { return grerror( "missing comma or pipe after production" ); }
+<PRODUCTIONS_RIGHT_COMMA>. { return grerror( "missing comma, pipe or '})' after production" ); }
+
+<DEF_END>. { return grerror( "illegal character after grammar definition" ); }
+
 
 %%
 
@@ -176,10 +184,9 @@ void add_production_left( void ) {
 
 void add_production_right( void ) {
 
-    int pos_text, pos_right;
     char (*right)[2] = grammar_new_production( grlval, last_left_production );
 
-    for ( pos_text = pos_right = 0; pos_text < grleng; pos_text++ ) {
+    for ( int pos_text = 0, pos_right = 0; pos_text < (int)grleng; pos_text++ ) {
 
         if ( grtext[ pos_text ] != ' '  && grtext[ pos_text ] != '\t' &&
              grtext[ pos_text ] != '\f' && grtext[ pos_text ] != '\v' &&
@@ -192,12 +199,7 @@ void add_production_right( void ) {
                     (*right)[0] = grtext[ pos_text ];
 
                     if ( (*right)[0] == '\\' )
-                        break;
-
-                    if ( (*right)[0] < 'a' )
-                        grlval->type |= LEFT_REGULAR_GRAMMAR;
-                    else
-                        grlval->type |= RIGHT_REGULAR_GRAMMAR;
+                        grlval->empty = last_left_production;
 
                     break;
 
@@ -205,8 +207,13 @@ void add_production_right( void ) {
 
                     (*right)[1] = grtext[ pos_text ];
 
-                    if ( ( (*right)[0] < 'a' ) ^ ( (*right)[1] < 'a' ) != 1 )
+                    if ( !( ( (*right)[0] < 'a' ) ^ ( (*right)[1] < 'a' ) ) )
                         grlval->type = NON_REGULAR_GRAMMAR;
+                    else
+                    if ( (*right)[0] < 'a' )
+                        grlval->type |= LEFT_REGULAR_GRAMMAR;
+                    else
+                        grlval->type |= RIGHT_REGULAR_GRAMMAR;
 
                     break;
 
@@ -223,7 +230,19 @@ void add_production_right( void ) {
 
 int grwrap( void ) {
 
-    return 0;
+    const char* out[] = {
+
+        [ LEFT_REGULAR_GRAMMAR ]  = "left ",
+        [ RIGHT_REGULAR_GRAMMAR ] = "right ",
+        [ NON_REGULAR_GRAMMAR ]   = "non-",
+    };
+
+    printf( "the input is a valid %sregular grammar\n", out[ grlval->type ] );
+
+    if ( grlval->type == NON_REGULAR_GRAMMAR )
+        grerror( "non-regular grammar" );
+
+    return 1;
 }
 
 
@@ -232,6 +251,7 @@ struct grammar* grlval;
 int main( void ) {
 
     if ( !grlex() ) {
+
         free_grammar( grlval );
     }
 
