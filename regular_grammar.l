@@ -252,33 +252,3 @@ int grwrap( void ) {
     return 1;
 }
 
-
-struct grammar* grlval;
-
-int main( void ) {
-
-    if ( !grlex() ) {
-
-        if ( grlval->type == LEFT_REGULAR_GRAMMAR ) {
-
-            struct grammar *temp = left_to_right_grammar( grlval );
-
-            free_grammar( grlval );
-
-            grlval = temp;
-        }
-
-        struct grammar *temp = clean_grammar( grlval );
-
-        free_grammar( grlval );
-
-        grlval = temp;
-
-        print_grammar( grlval );
-
-        free_grammar( grlval );
-    }
-
-    return 0;
-}
-

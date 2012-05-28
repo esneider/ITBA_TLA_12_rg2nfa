@@ -419,3 +419,83 @@ struct grammar* clean_grammar( struct grammar *grammar ) {
     return new;
 }
 
+
+struct grammar *grlval;
+struct grammar *falval;
+
+
+int grlex( void );
+int falex( void );
+
+void* gr_create_buffer( FILE *file, int size );
+void  gr_switch_to_buffer( void* new_buffer );
+
+void* fa_create_buffer( FILE *file, int size );
+void  fa_switch_to_buffer( void* new_buffer );
+
+#define YY_BUF_SIZE 16384
+
+
+int main ( int argc, char **argv ) {
+
+    if ( argc < 1 || argc > 2 ) {
+
+        printf( "Usage:\n\trg2nfa input_file [output_file]\n" );
+        return 1;
+    }
+
+    FILE* file = fopen( argv[1], "r" );
+
+    if ( !file ) {
+
+        printf( "Error opening file\n" );
+        return 1;
+    }
+
+    switch ( argv[1][ strlen( argv[1] ) - 1 ] ) {
+
+        case 'r':
+
+            gr_switch_to_buffer( gr_create_buffer( file, YY_BUF_SIZE ) );
+
+            if ( !grlex() ) {
+
+                struct grammar *temp = clean_grammar( grlval );
+
+                free_grammar( grlval );
+
+                grlval = temp;
+
+                // TODO
+
+                free_grammar( grlval );
+            }
+
+            break;
+
+        case 't':
+
+            fa_switch_to_buffer( fa_create_buffer( file, YY_BUF_SIZE ) );
+
+            if ( !falex() ) {
+
+                // TODO
+
+                free_grammar( falval );
+            }
+            break;
+
+        default:
+
+            printf( "The input file should have one of the following extensions: dot, gr\n" );
+
+            fclose( file );
+
+            return 1;
+    }
+
+    fclose( file );
+
+    return 0;
+}
+

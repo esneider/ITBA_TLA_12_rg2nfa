@@ -8,12 +8,20 @@
 
 extern struct grammar *falval;
 
+static bool ok = false;
 static bool terminal;
 static char last_left_production;
 static char last_right_production;
+static char last_left_production_pos;
+static char last_right_production_pos;
+static char next_non_terminal = 'A';
+static struct { char *name; char symbol; bool terminal; char *state; } name_map[0x100];
+static int map_size = 0;
+static struct grammar *temp;
 
 static int faerror( const char *msg );
 static void add_node_name( void );
+static void add_state_name( void );
 static void add_production_left( void );
 static void add_production_right( void );
 static void add_production_terminal( void );
@@ -24,7 +32,8 @@ whitespace     [ \t\f\v\n\r]
 comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 %x NODES NODE_TYPE NODE_BEFORE_NAME NODE_NAME NODE_LABEL PRODUCTION_MIDDLE
-%x PRODUCTION_RIGHT PRODUCTION_LABEL PRODUCTION_TERMINAL DEF_END
+%x PRODUCTION_RIGHT PRODUCTION_LABEL PRODUCTION_TERMINAL DEF_END STATE_NAME
+%x NODE_LABEL_END
 
 %option yylineno
 %option nounput
@@ -33,7 +42,7 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 {comment} { }
 
-{comment}*"digraph"{comment}"{" { BEGIN( NODES ); }
+{comment}*"digraph"{comment}"{" { falval = new_grammar(); temp = new_grammar(); BEGIN( NODES ); }
 
 
 <NODES>{comment} { }
@@ -44,7 +53,7 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 <NODES>[a-zA-Z0-9]+ { add_production_left(); BEGIN( PRODUCTION_MIDDLE ); }
 
-<NODES>{comment}"}"{comment} { BEGIN( DEF_END ); }
+<NODES>{comment}"}"{comment} { ok = true; BEGIN( DEF_END ); }
 
 
 <NODE_TYPE>{comment} { }
@@ -66,7 +75,13 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 <NODE_LABEL>{comment} { }
 
-<NODE_LABEL>{comment}"["{comment}"label"{comment}"="{comment}\"[^\"]*\"{comment}"]"{comment}";" { BEGIN( NODES ); }
+<NODE_LABEL>{comment}"["{comment}"label"{comment}"="{comment}"\"" { BEGIN( STATE_NAME ); }
+
+
+<STATE_NAME>[^\"]* { add_state_name(); BEGIN( NODE_LABEL_END ); }
+
+
+<NODE_LABEL_END>"\""{comment}"]"{comment}";" { BEGIN( NODES ); }
 
 
 <PRODUCTION_MIDDLE>{comment}
@@ -97,10 +112,10 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 <DEF_END><<EOF>> { return 0; }
 
-<NODES,NODE_TYPE,NODE_BEFORE_NAME,NODE_NAME,NODE_LABEL,PRODUCTION_MIDDLE,PRODUCTION_RIGHT,PRODUCTION_LABEL,PRODUCTION_TERMINAL><<EOF>> { return faerror( "unexpected end of file" ); }
+<NODES,NODE_TYPE,NODE_BEFORE_NAME,NODE_NAME,NODE_LABEL,PRODUCTION_MIDDLE,PRODUCTION_RIGHT,PRODUCTION_LABEL,PRODUCTION_TERMINAL,STATE_NAME,NODE_LABEL_END><<EOF>> { return faerror( "unexpected end of file" ); }
 
 
-. { return faerror("The input is not a digraph or valid dot file"); }
+. { falval = temp = NULL; return faerror("The input is not a digraph or valid dot file"); }
 
 <NODES>. { return faerror("Invalid node declaration"); }
 
@@ -122,6 +137,10 @@ comment        ({whitespace}*"//"[^\n]*)*{whitespace}*
 
 <DEF_END>. { return faerror("Invalid character at end of definition"); }
 
+<STATE_NAME>. { return faerror("Invalid character at label name"); }
+
+<NODE_LABEL_END>. { return faerror("Invalid node declaration"); }
+
 %%
 
 
@@ -129,7 +148,8 @@ static int faerror( const char *msg ) {
 
     printf( "%d: error: %s\n", yylineno, msg );
 
-//    free_grammar( grlval );
+    free_grammar( falval );
+    free_grammar( temp );
 
 	return 1;
 }
@@ -137,36 +157,163 @@ static int faerror( const char *msg ) {
 
 static void add_node_name( void ) {
 
-    printf( "node: %s\n", fatext );
+    if ( next_non_terminal > 'Z' ) {
+
+        printf( "Aborting due to lack of upcase letters\n" );
+        exit(1);
+    }
+
+    name_map[ map_size ].terminal = terminal;
+    name_map[ map_size ].symbol = next_non_terminal++;
+    name_map[ map_size ].name = malloc( faleng + 1 );
+
+    if ( !name_map[ map_size ].name )
+        memory_error();
+
+    strcpy( name_map[ map_size ].name, fatext );
+
+    map_size++;
+}
+
+
+static void add_state_name( void ) {
+
+    name_map[ map_size - 1 ].state = malloc( faleng + 1 );
+    strcpy( name_map[ map_size - 1 ].state, fatext );
 }
 
 
 static void add_production_left( void ) {
 
-    printf( "prod_left: %s\n", fatext );
+    last_left_production = 0;
+
+    for ( int i = 0; i < map_size; i++ ) {
+
+        if ( !strcmp( fatext, name_map[i].name ) ) {
+
+            last_left_production = name_map[i].symbol;
+            last_left_production_pos = i;
+            break;
+        }
+    }
+
+    if ( !last_left_production ) {
+
+        faerror( "Invalid node name" );
+        exit(1);
+    }
 }
 
 
 static void add_production_right( void ) {
 
-    printf( "prod_right: %s\n", fatext );
+    last_right_production = 0;
+
+    for ( int i = 0; i < map_size; i++ ) {
+
+        if ( !strcmp( fatext, name_map[i].name ) ) {
+
+            last_right_production = name_map[i].symbol;
+            last_right_production_pos = i;
+            break;
+        }
+    }
+
+    if ( !last_right_production ) {
+
+        faerror( "Invalid node name" );
+        exit(1);
+    }
 }
 
 
 static void add_production_terminal( void ) {
 
-    printf( "terminal: %c\n", fatext[0] );
+    char (*production)[2] = grammar_new_production( falval, last_left_production );
+    char (*temp_production)[2] = grammar_new_production( temp, last_left_production_pos );
+
+    (*temp_production)[0] = fatext[0];
+    (*temp_production)[1] = last_right_production_pos;
+
+    if ( fatext[0] == '\\' ) {
+
+        (*production)[0] = last_right_production;
+
+    } else {
+
+        (*production)[0] = fatext[0];
+        (*production)[1] = last_right_production;
+    }
 }
 
 
 int fawrap( void ) {
 
+    if ( ok ) {
+
+        for ( int i = 0; i < map_size; i++ )
+
+            if ( name_map[i].terminal )
+
+                (*grammar_new_production( falval, name_map[i].symbol ))[0] = '\\';
+
+        falval->name = "no_name";
+        falval->num_non_terminals = 0;
+        falval->num_terminals = 0;
+        falval->initial = name_map[0].symbol;
+        bool terminals[0x100] = {0};
+
+        for ( int i = 0; i < 0x100; i++ ) {
+
+            struct production* production = falval->productions + i;
+
+            if ( production->num_rights )
+
+                falval->non_terminals[ falval->num_non_terminals++ ] = i;
+
+            for ( int j = 0; j < production->num_rights; j++ )
+
+                terminals[ (int)production->rights[j][0] ] = true;
+        }
+
+        for ( int i = 'a'; i <= 'z'; i++ )
+
+            if ( terminals[i] )
+
+                falval->terminals[ falval->num_terminals++ ] = i;
+
+        /* print info */
+
+        for ( int i = 0; i < falval->num_terminals; i++ )
+
+            printf( "terminal symbol: %c\n", falval->terminals[i] );
+
+        for ( int i = 0; i < map_size; i++ )
+
+            printf( "state: %s\n", name_map[i].state );
+
+        printf( "initial state: %s\n", name_map[0].state );
+
+        for ( int i = 0; i < map_size; i++ )
+
+            if ( name_map[i].terminal )
+
+                printf( "final state: %s\n", name_map[i].state );
+
+        for ( int i = 0; i < 0x100; i++ ) {
+
+            struct production* production = temp->productions + i;
+
+            for ( int j = 0; j < production->num_rights; j++ ) {
+
+                if ( production->rights[j][1] )
+
+                    printf( "delta( %s, %c ) = %s\n", name_map[i].state, production->rights[j][0], name_map[ (int)production->rights[j][1] ].state );
+            }
+        }
+
+        free_grammar( temp );
+    }
     return 1;
-}
-
-
-int main ( void ) {
-
-    falex();
 }
 
