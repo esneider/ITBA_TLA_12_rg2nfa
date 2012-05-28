@@ -77,13 +77,15 @@ char (*grammar_new_production( struct grammar *grammar, char left ))[2] {
         production->cap_rights *= 2;
         production->cap_rights += 1;
 
-        char (*rights)[2] = realloc( production->rights, production->cap_rights );
+        char (*rights)[2] = realloc( production->rights, production->cap_rights * 2 );
 
         if ( !rights ) {
 
             free_grammar( grammar );
             memory_error();
         }
+
+        memset( rights + production->num_rights, '\0', (production->cap_rights - production->num_rights) * 2 );
 
         production->rights = rights;
     }
