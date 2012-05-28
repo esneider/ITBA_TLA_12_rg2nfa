@@ -22,8 +22,75 @@
 
 \section{Consideraciones}
 
+    Se hizo una pequeña modificación a la sintaxis de los archivos de
+    gramáticas, para poder implementarla (los nombres de gramáticas no
+    admiten caracteres `\texttt{=}`).
+
+    La sintaxis de los archivos \texttt{dot} fue implementada de una forma más
+    relajada, dado que no se implementó la sintaxis completa.
+
+    Se asumió que los simbolos terminales de las gramáticas eran letras
+    minúsculas, y los simbolos no terminales letras mayúsculas. Además, debe
+    haber al menos una letra mayúscula no usada, para en el estado
+    final añadido al transformar la gramática en autómata.
+
+    En los archivos \texttt{dot} se asumió que el primer nodo declarado es el
+    inicial, a falta de otros indicadores.
+
+    Finalmente, dado que era necesario compilar los archivos \texttt{dot} para
+    generar los gráficos de los autómatas, la correcta ejecución del programa
+    solo se asegura en un sistema operativo Linux con la utilidad dot instalada
+    y en el path.
+
 \section{Desarrollo}
+
+    Inicialmente se detectó que la parte más compleja del trabajo práctico
+    eran las transformaciones a la gramática regular. El paso de autómata
+    a gramática regular es bastante sencillo y por lo tanto se dejó para el
+    final.
+
+    Esto fue cierto hasta tal punto que ni siquiera se necesitó una estructura
+    para representar los autómatas. Estos se transforman en gramáticas
+    directamente al ser leidos.
+
+    Se tomo una especial atención a los mensajes de error durante el parseo ya
+    que esto servía tanto para el usuario como para nosotros, los
+    programadores, para debuggear.
 
 \section{Dificultades}
 
+    Una de las grandes dificultades encontradas fue la decisión de qué
+    estructura de datos usar para mantener las gramáticas regulares,
+    manteniendo eficiencia, y con la máxima facilidad para efectuar las
+    transformaciones necesarias.
+
+    La parte problemática era, más que nada, cómo guardar las producciones,
+    manteniendo simpleza tanto en la consulta como en la modificación. En un
+    principio se usó un vector de listas enlazadas, pero se termino cambiando
+    a un vector de vectores dinámicos, para facilitar el manejo de memoria. Y
+    se hizo que varias de las transformaciones trataran a la estructura de
+    datos como inmutable.
+
+    Dado que era un proyecto que hacía uso intensivo de diversas estructuras
+    de datos, C no era la herramienta perfecta, debido a su falta de librería
+    estandar de estructuras de datos. A pesar de que es una interesante tarea
+    programar las distintas estructuras clásicas, no eran (creemos) el objetivo
+    del trabajo práctico, y freno considerablemente el desarrollo de este.
+
+
+\section{Extensiones}
+
+    Se podrían añadir conversiones desde y hacie expresiones regulares sin
+    mucho trabajo extra. Otra meta más desafiente podría ser transformaciones
+    de gramáticas libres de contexto a autómatas de pila.
+
+    En varios lugares se podría mejorar el orden de los algoritmos usando
+    árboles balanceados, aunque dado que la cantidad de simbolos esta
+    fuertemente restringida por la cantidad de símbolos, no haría un gran
+    cambio al tiempo de ejecución.
+
+    Una ultima extensión, es soportar símbolos multicaracteres, para poder
+    representar gramáticas/autómatas más extensos.
+
 \end{document}
+
