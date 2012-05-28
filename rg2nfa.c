@@ -426,7 +426,67 @@ struct grammar* clean_grammar( struct grammar *grammar ) {
 
 static void print_automata( FILE *file, struct grammar *grammar ) {
 
-    // TODO
+    fprintf( file, "digraph {\nrankdir = \"LR\";\n" );
+
+    char positions[0x100] = {0};
+
+    positions[ (int)grammar->initial ] = 1;
+
+    for ( int i = 0, pos = 2; i < 0x100; i++ ) {
+
+        struct production *production = grammar->productions + i;
+
+        if ( !production->num_rights )
+            continue;
+
+        bool final = false;
+
+        for ( int j = 0; j < production->num_rights; j++ ) {
+
+            if ( production->rights[j][0] == '\\' ) {
+
+                final = true;
+                break;
+            }
+        }
+
+        if ( !positions[i] )
+            positions[i] = pos++;
+
+        fprintf( file, "node [shape=%scircle] Node%d [label=\"%d\"];\n", final ? "double" : "", positions[i], positions[i] );
+    }
+
+    for ( int i = 'A'; i <= 'Z'; i++ ) {
+
+        struct production *production = grammar->productions + i;
+
+        for ( int j = 'A'; j <= 'Z'; j++ ) {
+
+            bool first = true;
+
+            for ( int p = 0; p < production->num_rights; p++ ) {
+
+                if ( (int)production->rights[p][1] == j ) {
+
+                    if ( first ) {
+
+                        first = false;
+                        fprintf( file, "Node%d -> Node%d [label=\"%c", positions[i], positions[j], production->rights[p][0] );
+
+                    } else {
+
+                        fprintf( file, "/%c", production->rights[p][0] );
+                    }
+                }
+            }
+
+            if ( !first )
+
+                fprintf( file, "\"];\n" );
+        }
+    }
+
+    fprintf( file, "}\n" );
 }
 
 
@@ -487,6 +547,26 @@ int main ( int argc, char **argv ) {
                     print_automata( output, grlval );
 
                     fclose( output );
+
+                    if ( argc < 3 ) {
+
+                        if ( system( "dot temp -Tpng -o out.png; rm temp" ) )
+
+                            printf( "Error writing output file\n" );
+
+                    } else {
+
+                        char *s = malloc ( 50 + strlen( argv[2] ) );
+
+                        if ( !s )
+                            memory_error();
+
+                        sprintf( s, "dot temp -Tpng -o %s; rm temp", argv[2] );
+
+                        if ( system(s) )
+
+                            printf( "Error writing output file\n" );
+                    }
                 }
 
                 free_grammar( grlval );

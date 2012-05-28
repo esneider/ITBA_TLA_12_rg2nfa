@@ -257,7 +257,13 @@ int fawrap( void ) {
 
                 (*grammar_new_production( falval, name_map[i].symbol ))[0] = '\\';
 
-        falval->name = "no_name";
+        falval->name = malloc(10);
+
+        if ( !falval->name )
+            memory_error();
+
+        strcpy( falval->name, "no_name" );
+
         falval->num_non_terminals = 0;
         falval->num_terminals = 0;
         falval->initial = name_map[0].symbol;
