@@ -8,7 +8,9 @@
 
 extern struct grammar *falval;
 
-bool terminal;
+static bool terminal;
+static char last_left_production;
+static char last_right_production;
 
 static int faerror( const char *msg );
 static void add_node_name( void );
