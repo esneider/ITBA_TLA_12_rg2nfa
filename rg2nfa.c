@@ -264,23 +264,23 @@ struct grammar* left_to_right_grammar( struct grammar *left ) {
 }
 
 
-void print_grammar( struct grammar *grammar ) {
+void print_grammar( FILE* file, struct grammar *grammar ) {
 
-    printf( "%s = (\n", grammar->name );
+    fprintf( file, "%s = (\n", grammar->name );
 
-    printf( "\t{" );
+    fprintf( file, "\t{" );
     for ( char *nt = grammar->non_terminals; *nt; nt++ )
-        printf( " %c,", *nt );
-    printf( " }\n" );
+        fprintf( file, " %c,", *nt );
+    fprintf( file, " }\n" );
 
-    printf( "\t{" );
+    fprintf( file, "\t{" );
     for ( char *nt = grammar->terminals; *nt; nt++ )
-        printf( " %c,", *nt );
-    printf( " }\n" );
+        fprintf( file, " %c,", *nt );
+    fprintf( file, " }\n" );
 
-    printf( "\t%c,\n", grammar->initial );
+    fprintf( file, "\t%c,\n", grammar->initial );
 
-    printf( "\t{\n" );
+    fprintf( file, "\t{\n" );
 
     for ( int i = 0; i < 0x100; i++ ) {
 
@@ -288,10 +288,10 @@ void print_grammar( struct grammar *grammar ) {
 
         for ( int j = 0; j < production->num_rights; j++ )
 
-            printf( "\t\t%c->%.2s\n", i, production->rights[j] );
+            fprintf( file, "\t\t%c->%.2s\n", i, production->rights[j] );
     }
 
-    printf( "\t}\n)\n" );
+    fprintf( file, "\t}\n)\n" );
 }
 
 
@@ -401,6 +401,8 @@ struct grammar* clean_grammar( struct grammar *grammar ) {
         }
     }
 
+    free_grammar( reversed );
+
     /* non-terminals */
 
     new->num_non_terminals = 0;
@@ -422,6 +424,12 @@ struct grammar* clean_grammar( struct grammar *grammar ) {
 }
 
 
+static void print_automata( FILE *file, struct grammar *grammar ) {
+
+    // TODO
+}
+
+
 struct grammar *grlval;
 struct grammar *falval;
 
@@ -440,7 +448,7 @@ void  fa_switch_to_buffer( void* new_buffer );
 
 int main ( int argc, char **argv ) {
 
-    if ( argc < 1 || argc > 2 ) {
+    if ( argc < 2 || argc > 3 ) {
 
         printf( "Usage:\n\trg2nfa input_file [output_file]\n" );
         return 1;
@@ -468,7 +476,18 @@ int main ( int argc, char **argv ) {
 
                 grlval = temp;
 
-                // TODO
+                FILE *output = fopen( "temp", "w" );
+
+                if ( !output ) {
+
+                    printf( "Error writing output file\n" );
+
+                } else {
+
+                    print_automata( output, grlval );
+
+                    fclose( output );
+                }
 
                 free_grammar( grlval );
             }
@@ -481,7 +500,23 @@ int main ( int argc, char **argv ) {
 
             if ( !falex() ) {
 
-                // TODO
+                FILE *output;
+
+                if ( argc > 2 )
+                    output = fopen( argv[2], "w" );
+                else
+                    output = fopen( "out.rg", "w" );
+
+                if ( !output ) {
+
+                    printf( "Error writing output file\n" );
+
+                } else {
+
+                    print_grammar( output, falval );
+
+                    fclose( output );
+                }
 
                 free_grammar( falval );
             }

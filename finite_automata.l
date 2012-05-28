@@ -306,9 +306,7 @@ int fawrap( void ) {
 
             for ( int j = 0; j < production->num_rights; j++ ) {
 
-                if ( production->rights[j][1] )
-
-                    printf( "delta( %s, %c ) = %s\n", name_map[i].state, production->rights[j][0], name_map[ (int)production->rights[j][1] ].state );
+                printf( "delta( %s, %c ) = %s\n", name_map[i].state, production->rights[j][0], name_map[ (int)production->rights[j][1] ].state );
             }
         }
 

@@ -46,7 +46,7 @@ void normalize_grammar( struct grammar *grammar );
 
 struct grammar* left_to_right_grammar( struct grammar *left );
 
-void print_grammar( struct grammar *grammar );
+void print_grammar( FILE *file, struct grammar *grammar );
 
 struct grammar* clean_grammar( struct grammar *grammar );
 
